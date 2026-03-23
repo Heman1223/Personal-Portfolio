@@ -167,6 +167,20 @@
       animation: fadeSlideUp .9s cubic-bezier(.16, 1, .3, 1) .7s both;
     }
 
+    /* typing cursor */
+    #role-text::after {
+      content: '|';
+      display: inline-block;
+      margin-left: 2px;
+      animation: typingBlink .7s step-end infinite;
+      color: rgba(255, 255, 180, .7);
+    }
+
+    @keyframes typingBlink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
     .scroll-hint {
       display: flex;
       flex-direction: column;
@@ -712,9 +726,6 @@
       width: 100%;
       overflow: hidden;
       margin-top: 28px;
-      flex: 1;
-      min-height: 0;
-      /* let it shrink to fit */
     }
 
     #projects-track {
@@ -722,60 +733,45 @@
       gap: 28px;
       width: max-content;
       padding: 0 80px;
-      height: 100%;
+      align-items: center;
       will-change: transform;
       transition: transform .05s linear;
     }
 
     .project-card {
-      width: min(480px, 82vw);
+      width: min(640px, 82vw);
       flex-shrink: 0;
-      /* fill the available height minus progress dots below */
-      height: calc(100vh - 60px - 28px - 80px - 48px);
-      max-height: 580px;
-      min-height: 360px;
-      overflow-y: auto;
-      overflow-x: hidden;
-      border: 1px solid rgba(255, 255, 255, .1);
-      background: rgba(255, 255, 255, .02);
-      padding: 32px 36px;
+      height: auto;
+      aspect-ratio: 16 / 9;
+      perspective: 1000px;
       cursor: none;
       position: relative;
       opacity: 0;
       transform: translateY(20px);
-      transition: opacity .5s, transform .5s, border-color .3s, background .3s, box-shadow .55s;
-      /* subtle scrollbar */
+      transition: opacity .5s, transform .5s;
+      background: transparent;
+      border: none;
+    }
+
+    /* Normal (non-flip) card style */
+    .project-card-normal {
+      width: 100%;
+      height: 100%;
+      box-sizing: border-box;
+      border: 1px solid rgba(255, 255, 255, .1);
+      background: rgba(255, 255, 255, .02);
+      padding: 28px 32px;
+      overflow-y: auto;
       scrollbar-width: thin;
       scrollbar-color: rgba(255, 255, 220, .15) transparent;
+      transition: border-color .3s, background .3s;
     }
-
-    .project-card::-webkit-scrollbar {
-      width: 3px;
-    }
-
-    .project-card::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    .project-card::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 220, .15);
-      border-radius: 2px;
-    }
-
-    .project-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 1px;
-      background: linear-gradient(to right, transparent, rgba(255, 255, 220, .4), transparent);
-      transform: scaleX(0);
-      transition: transform .5s;
-    }
-
-    .project-card:hover::before {
-      transform: scaleX(1);
+    .project-card-normal::-webkit-scrollbar { width: 3px; }
+    .project-card-normal::-webkit-scrollbar-track { background: transparent; }
+    .project-card-normal::-webkit-scrollbar-thumb { background: rgba(255, 255, 220, .15); border-radius: 2px; }
+    .project-card:hover .project-card-normal {
+      border-color: rgba(255, 255, 220, .16);
+      background: rgba(255, 255, 220, .025);
     }
 
     .project-card.reveal {
@@ -783,9 +779,88 @@
       transform: translateY(0);
     }
 
-    .project-card:hover {
-      border-color: rgba(255, 255, 220, .16);
-      background: rgba(255, 255, 220, .025);
+    .project-card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transition: transform .7s cubic-bezier(.4, 0, .2, 1);
+      transform-style: preserve-3d;
+    }
+
+    .project-card:hover .project-card-inner {
+      transform: rotateY(180deg);
+    }
+
+    .project-card-front,
+    .project-card-back {
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      border: 1px solid rgba(255, 255, 255, .1);
+      overflow: hidden;
+    }
+
+    .project-card-front {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 32px 36px;
+      background: rgba(255, 255, 255, .02);
+    }
+
+    .project-card-front img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: .55;
+      transition: opacity .4s, transform .7s;
+    }
+
+    .project-card:hover .project-card-front img {
+      opacity: .3;
+      transform: scale(1.05);
+    }
+
+    .project-card-front::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,.85) 0%, rgba(0,0,0,.3) 50%, transparent 100%);
+      pointer-events: none;
+    }
+
+    .project-card-front .front-content {
+      position: relative;
+      z-index: 2;
+    }
+
+    .project-card-front .flip-hint {
+      font-family: 'Geist Mono', monospace;
+      font-size: 9px;
+      letter-spacing: .3em;
+      color: rgba(255,255,220,.4);
+      text-transform: uppercase;
+      margin-top: 16px;
+    }
+
+    .project-card-back {
+      transform: rotateY(180deg);
+      background: rgba(10, 10, 10, .96);
+      padding: 28px 32px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 220, .15) transparent;
+    }
+
+    .project-card-back::-webkit-scrollbar { width: 3px; }
+    .project-card-back::-webkit-scrollbar-track { background: transparent; }
+    .project-card-back::-webkit-scrollbar-thumb { background: rgba(255, 255, 220, .15); border-radius: 2px; }
+
+    .project-card-front .project-title {
+      text-shadow: 0 2px 12px rgba(0,0,0,.6);
     }
 
     .project-header {
@@ -1339,9 +1414,7 @@
       }
 
       .project-card {
-        width: min(360px, 88vw);
-        padding: 24px 20px;
-        max-height: 70vh;
+        width: min(420px, 88vw);
       }
 
       .projects-scroll-header {
@@ -1399,11 +1472,10 @@
       #projects-progress{padding:0 20px;}
       .project-card{
         width:calc(100vw - 56px);
-        padding:20px;
-        max-height:65vh;
-        height:auto;
-        min-height:0;
       }
+      .project-card-front{padding:20px;}
+      .project-card-back{padding:20px;}
+      .project-card-normal{padding:20px;}
       .project-title{font-size:24px;}
       .project-desc{font-size:13px;}
       .project-highlights li{font-size:12px;}
@@ -1616,132 +1688,174 @@
             <div id="projects-track">
 
               <!-- Card 1: Startup Website -->
+              <!-- Card 1: Nameh.co -->
               <div class="project-card">
-                <div class="project-header">
-                  <div>
-                    <div class="project-subtitle">Startup · Personal Venture</div>
-                    <h3 class="project-title">Main Web — Startup</h3>
+                <div class="project-card-inner">
+                  <div class="project-card-front">
+                    <img src="Nameh.png" alt="Nameh.co" />
+                    <div class="front-content">
+                      <div class="project-subtitle">Startup · Personal Venture</div>
+                      <h3 class="project-title">Nameh.co</h3>
+                      <div class="project-year">2025</div>
+                      <div class="flip-hint">Hover to view details →</div>
+                    </div>
                   </div>
-                  <div class="project-year">2025</div>
-                </div>
-                <p class="project-desc">Personal startup platform — a modern full-stack web presence for an early-stage
-                  venture. Built with clean design principles, fast load performance, and a focus on user experience
-                  from first impression to conversion.</p>
-                <ul class="project-highlights">
-                  <li>Architected and deployed a complete startup web presence</li>
-                  <li>Optimized for performance, accessibility, and SEO</li>
-                  <li>Responsive across all screen sizes and devices</li>
-                  <li>Custom UI with smooth animations and interactions</li>
-                </ul>
-                <div class="project-stack">
-                  <span class="stack-tag">React.js</span><span class="stack-tag">Node.js</span><span
-                    class="stack-tag">CSS</span><span class="stack-tag">Vercel</span>
-                </div>
-                <div class="project-links">
-                  <a href="https://main-web-eight-xi.vercel.app/" target="_blank" class="btn"
-                    style="font-size:10px;padding:10px 20px;">
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
-                    </svg>
-                    Live Demo
-                  </a>
+                  <div class="project-card-back">
+                    <div class="project-header">
+                      <div>
+                        <div class="project-subtitle">Startup · Personal Venture</div>
+                        <h3 class="project-title">Nameh.co</h3>
+                      </div>
+                      <div class="project-year">2025</div>
+                    </div>
+                    <p class="project-desc">Personal startup platform — a modern full-stack web presence for an early-stage
+                      venture. Built with clean design principles, fast load performance, and a focus on user experience
+                      from first impression to conversion.</p>
+                    <ul class="project-highlights">
+                      <li>Architected and deployed a complete startup web presence</li>
+                      <li>Optimized for performance, accessibility, and SEO</li>
+                      <li>Responsive across all screen sizes and devices</li>
+                      <li>Custom UI with smooth animations and interactions</li>
+                    </ul>
+                    <div class="project-stack">
+                      <span class="stack-tag">React.js</span><span class="stack-tag">Node.js</span><span
+                        class="stack-tag">CSS</span><span class="stack-tag">Vercel</span>
+                    </div>
+                    <div class="project-links">
+                      <a href="https://main-web-eight-xi.vercel.app/" target="_blank" class="btn"
+                        style="font-size:10px;padding:10px 20px;">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
+                        </svg>
+                        Live Demo
+                      </a>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <!-- Card 2 -->
+              <!-- Card 2: Angel Investor Portal -->
               <div class="project-card">
-                <div class="project-header">
-                  <div>
-                    <div class="project-subtitle">Full Stack · Investment Platform</div>
-                    <h3 class="project-title">Investor Angel Portal</h3>
+                <div class="project-card-inner">
+                  <div class="project-card-front">
+                    <img src="Investor.png" alt="Investor Angel Portal" />
+                    <div class="front-content">
+                      <div class="project-subtitle">Full Stack · Investment Platform</div>
+                      <h3 class="project-title">Investor Angel Portal</h3>
+                      <div class="project-year">Mar 2026</div>
+                      <div class="flip-hint">Hover to view details →</div>
+                    </div>
                   </div>
-                  <div class="project-year">Mar 2026</div>
-                </div>
-                <p class="project-desc">Centralized startup investment tracking platform — investors monitor
-                  performance, compare startups, and get automated alerts from one intelligent dashboard.</p>
-                <ul class="project-highlights">
-                  <li>Track 10+ startup investments in real-time</li>
-                  <li>Role-based portals with full CRUD APIs</li>
-                  <li>Comparison engine improved efficiency ~30%</li>
-                  <li>Alert system for key performance changes</li>
-                </ul>
-                <div class="project-stack">
-                  <span class="stack-tag">React.js</span><span class="stack-tag">Node.js</span><span
-                    class="stack-tag">Express.js</span><span class="stack-tag">MongoDB</span>
-                </div>
-                <div class="project-links">
-                  <a href="https://investor-angel-portal.vercel.app/" target="_blank" class="btn"
-                    style="font-size:10px;padding:10px 20px;">
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
-                    </svg>
-                    Live Demo
-                  </a>
+                  <div class="project-card-back">
+                    <div class="project-header">
+                      <div>
+                        <div class="project-subtitle">Full Stack · Investment Platform</div>
+                        <h3 class="project-title">Investor Angel Portal</h3>
+                      </div>
+                      <div class="project-year">Mar 2026</div>
+                    </div>
+                    <p class="project-desc">Centralized startup investment tracking platform — investors monitor
+                      performance, compare startups, and get automated alerts from one intelligent dashboard.</p>
+                    <ul class="project-highlights">
+                      <li>Track 10+ startup investments in real-time</li>
+                      <li>Role-based portals with full CRUD APIs</li>
+                      <li>Comparison engine improved efficiency ~30%</li>
+                      <li>Alert system for key performance changes</li>
+                    </ul>
+                    <div class="project-stack">
+                      <span class="stack-tag">React.js</span><span class="stack-tag">Node.js</span><span
+                        class="stack-tag">Express.js</span><span class="stack-tag">MongoDB</span>
+                    </div>
+                    <div class="project-links">
+                      <a href="https://investor-angel-portal.vercel.app/" target="_blank" class="btn"
+                        style="font-size:10px;padding:10px 20px;">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
+                        </svg>
+                        Live Demo
+                      </a>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <!-- Card 3 -->
+              <!-- Card 3: Hi-tech Homes -->
               <div class="project-card">
-                <div class="project-header">
-                  <div>
-                    <div class="project-subtitle">Full Stack · Real Estate</div>
-                    <h3 class="project-title">Hi-tech Homes</h3>
+                <div class="project-card-inner">
+                  <div class="project-card-front">
+                    <img src="hitech.png" alt="Hi-tech Homes" />
+                    <div class="front-content">
+                      <div class="project-subtitle">Full Stack · Real Estate</div>
+                      <h3 class="project-title">Hi-tech Homes</h3>
+                      <div class="project-year">Nov 2025</div>
+                      <div class="flip-hint">Hover to view details →</div>
+                    </div>
                   </div>
-                  <div class="project-year">Nov 2025</div>
-                </div>
-                <p class="project-desc">Smart home and real estate platform connecting buyers, sellers, and managers
-                  with real-time dashboards, AI-powered chatbot support, and intelligent property recommendations.</p>
-                <ul class="project-highlights">
-                  <li>Property browsing for 100+ concurrent users</li>
-                  <li>Real-time admin dashboards for demand analysis</li>
-                  <li>AI chatbot integration increasing engagement</li>
-                  <li>Targeted property recommendation engine</li>
-                </ul>
-                <div class="project-stack">
-                  <span class="stack-tag">React.js</span><span class="stack-tag">Node.js</span><span
-                    class="stack-tag">Express.js</span><span class="stack-tag">MongoDB</span>
-                </div>
-                <div class="project-links">
-                  <a href="https://hi-tech-homes.vercel.app/" target="_blank" class="btn"
-                    style="font-size:10px;padding:10px 20px;">
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
-                    </svg>
-                    Live Demo
-                  </a>
+                  <div class="project-card-back">
+                    <div class="project-header">
+                      <div>
+                        <div class="project-subtitle">Full Stack · Real Estate</div>
+                        <h3 class="project-title">Hi-tech Homes</h3>
+                      </div>
+                      <div class="project-year">Nov 2025</div>
+                    </div>
+                    <p class="project-desc">Smart home and real estate platform connecting buyers, sellers, and managers
+                      with real-time dashboards, AI-powered chatbot support, and intelligent property recommendations.</p>
+                    <ul class="project-highlights">
+                      <li>Property browsing for 100+ concurrent users</li>
+                      <li>Real-time admin dashboards for demand analysis</li>
+                      <li>AI chatbot integration increasing engagement</li>
+                      <li>Targeted property recommendation engine</li>
+                    </ul>
+                    <div class="project-stack">
+                      <span class="stack-tag">React.js</span><span class="stack-tag">Node.js</span><span
+                        class="stack-tag">Express.js</span><span class="stack-tag">MongoDB</span>
+                    </div>
+                    <div class="project-links">
+                      <a href="https://hi-tech-homes.vercel.app/" target="_blank" class="btn"
+                        style="font-size:10px;padding:10px 20px;">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
+                        </svg>
+                        Live Demo
+                      </a>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <!-- Card 4 -->
+              <!-- Card 4: PRAYAS (normal card, no flip) -->
               <div class="project-card">
-                <div class="project-header">
-                  <div>
-                    <div class="project-subtitle">SIH · Disaster Management</div>
-                    <h3 class="project-title">PRAYAS</h3>
+                <div class="project-card-normal">
+                  <div class="project-header">
+                    <div>
+                      <div class="project-subtitle">SIH · Disaster Management</div>
+                      <h3 class="project-title">PRAYAS</h3>
+                    </div>
+                    <div class="project-year">Sep 2025</div>
                   </div>
-                  <div class="project-year">Sep 2025</div>
-                </div>
-                <p class="project-desc">Flood Management System for Smart India Hackathon. Visualizes AI-based flood
-                  prediction data and coordinates disaster response across teams in real time.</p>
-                <ul class="project-highlights">
-                  <li>Login, Dashboard & Relief Fund modules</li>
-                  <li>Interactive AI flood prediction dashboards</li>
-                  <li>Optimized for multi-device emergency use</li>
-                  <li>Top 50 of 350+ teams at SIH University Level</li>
-                </ul>
-                <div class="project-stack">
-                  <span class="stack-tag">React.js</span><span class="stack-tag">HTML</span><span
-                    class="stack-tag">CSS</span><span class="stack-tag">JavaScript</span>
-                </div>
-                <div class="project-links">
-                  <a href="https://github.com/Heman1223/PRAYAS" target="_blank" class="btn"
-                    style="font-size:10px;padding:10px 20px;">
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path
-                        d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22" />
-                    </svg>
-                    GitHub
-                  </a>
+                  <p class="project-desc">Flood Management System for Smart India Hackathon. Visualizes AI-based flood
+                    prediction data and coordinates disaster response across teams in real time.</p>
+                  <ul class="project-highlights">
+                    <li>Login, Dashboard & Relief Fund modules</li>
+                    <li>Interactive AI flood prediction dashboards</li>
+                    <li>Optimized for multi-device emergency use</li>
+                    <li>Top 50 of 350+ teams at SIH University Level</li>
+                  </ul>
+                  <div class="project-stack">
+                    <span class="stack-tag">React.js</span><span class="stack-tag">HTML</span><span
+                      class="stack-tag">CSS</span><span class="stack-tag">JavaScript</span>
+                  </div>
+                  <div class="project-links">
+                    <a href="https://github.com/Heman1223/PRAYAS" target="_blank" class="btn"
+                      style="font-size:10px;padding:10px 20px;">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path
+                          d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22" />
+                      </svg>
+                      GitHub
+                    </a>
+                  </div>
                 </div>
               </div>
 
@@ -1759,7 +1873,7 @@
       <!-- 04 EXPERIENCE -->
       <section class="section" id="section-experience">
         <div class="section-label">04 — Journey</div>
-        <h2 class="section-heading" data-animate="words">Experience &<br><em>Education</em></h2>
+        <h2 class="section-heading" data-animate="words">Experience</h2>
         <div class="timeline">
           <div class="timeline-item">
             <div class="timeline-period">Oct 2025 – Jan 2026</div>
@@ -1782,22 +1896,6 @@
                 continuous improvement</li>
             </ul>
           </div>
-        </div>
-        <div class="divider"></div>
-        <div class="edu-item">
-          <div class="edu-degree">B.Tech — Computer Science & Engineering</div>
-          <div class="edu-institution">Lovely Professional University, Punjab</div>
-          <div class="edu-meta">Aug 2023 – Present &nbsp;·&nbsp; CGPA: 8.81</div>
-        </div>
-        <div class="edu-item">
-          <div class="edu-degree">Intermediate (Class XII)</div>
-          <div class="edu-institution">Police D.A.V Public School, Jalandhar</div>
-          <div class="edu-meta">2022 – 2023 &nbsp;·&nbsp; 90%</div>
-        </div>
-        <div class="edu-item">
-          <div class="edu-degree">Matriculation (Class X)</div>
-          <div class="edu-institution">Police D.A.V Public School, Jalandhar</div>
-          <div class="edu-meta">2020 – 2021 &nbsp;·&nbsp; 86%</div>
         </div>
         <div class="divider" style="margin-top:44px;"></div>
         <div style="margin-top:28px;">
@@ -1892,9 +1990,30 @@
         </div>
       </section>
 
-      <!-- 06 CONTACT -->
+      <!-- 06 EDUCATION -->
+      <section class="section" id="section-education">
+        <div class="section-label">06 — Academics</div>
+        <h2 class="section-heading" data-animate="words">Education</h2>
+        <div class="edu-item">
+          <div class="edu-degree">B.Tech — Computer Science & Engineering</div>
+          <div class="edu-institution">Lovely Professional University, Punjab</div>
+          <div class="edu-meta">Aug 2023 – Present &nbsp;·&nbsp; CGPA: 8.81</div>
+        </div>
+        <div class="edu-item">
+          <div class="edu-degree">Intermediate (Class XII)</div>
+          <div class="edu-institution">Police D.A.V Public School, Jalandhar</div>
+          <div class="edu-meta">2022 – 2023 &nbsp;·&nbsp; 90%</div>
+        </div>
+        <div class="edu-item">
+          <div class="edu-degree">Matriculation (Class X)</div>
+          <div class="edu-institution">Police D.A.V Public School, Jalandhar</div>
+          <div class="edu-meta">2020 – 2021 &nbsp;·&nbsp; 86%</div>
+        </div>
+      </section>
+
+      <!-- 07 CONTACT -->
       <section class="section" id="section-contact">
-        <div class="section-label">06 — Connect</div>
+        <div class="section-label">07 — Connect</div>
         <div class="contact-wrap">
           <div class="contact-info">
             <h3 data-animate="words">Let's build<br>something<br><em>great.</em></h3>
@@ -1961,27 +2080,45 @@
       el.addEventListener('mouseleave', () => { cursorRing.style.width = '32px'; cursorRing.style.height = '32px'; cursorRing.style.borderColor = 'rgba(255,255,255,.4)'; });
     });
 
-    /* ─── HERO OVERLAY: cycling role text ─── */
+    /* ─── HERO OVERLAY: typewriter role text ─── */
     const roles = ['Full Stack Developer', 'Data Scientist', 'AI Automation Engineer', 'React Developer', 'MERN Stack Builder'];
     let rIdx = 0;
     const roleEl = document.getElementById('role-text');
-    function cycleRole() {
-      roleEl.style.transition = 'opacity .4s,transform .4s';
-      roleEl.style.opacity = '0';
-      roleEl.style.transform = 'translateY(-12px)';
-      setTimeout(() => {
-        rIdx = (rIdx + 1) % roles.length;
-        roleEl.textContent = roles[rIdx];
-        roleEl.style.transform = 'translateY(12px)';
-        roleEl.style.transition = 'none';
-        setTimeout(() => {
-          roleEl.style.transition = 'opacity .4s,transform .4s';
-          roleEl.style.opacity = '1';
-          roleEl.style.transform = 'translateY(0)';
-        }, 30);
-      }, 420);
+    const TYPE_SPEED = 70;
+    const DELETE_SPEED = 40;
+    const PAUSE_AFTER_TYPE = 1800;
+    const PAUSE_AFTER_DELETE = 400;
+
+    function typeWriter() {
+      const currentRole = roles[rIdx];
+      let charIdx = 0;
+
+      function typeChar() {
+        if (charIdx <= currentRole.length) {
+          roleEl.textContent = currentRole.substring(0, charIdx);
+          charIdx++;
+          setTimeout(typeChar, TYPE_SPEED);
+        } else {
+          setTimeout(deleteChar, PAUSE_AFTER_TYPE);
+        }
+      }
+
+      function deleteChar() {
+        const currentText = roleEl.textContent;
+        if (currentText.length > 0) {
+          roleEl.textContent = currentText.substring(0, currentText.length - 1);
+          setTimeout(deleteChar, DELETE_SPEED);
+        } else {
+          rIdx = (rIdx + 1) % roles.length;
+          setTimeout(typeWriter, PAUSE_AFTER_DELETE);
+        }
+      }
+
+      typeChar();
     }
-    setInterval(cycleRole, 2400);
+
+    roleEl.textContent = '';
+    setTimeout(typeWriter, 1200);
 
     /* ─── AMBIENT PARTICLES ─── */
     const cvs = document.getElementById('particles-canvas'), ctx2 = cvs.getContext('2d');
